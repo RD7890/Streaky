@@ -1,10 +1,10 @@
 package com.rohan.streaky.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -19,7 +19,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.rohan.streaky.ui.theme.GreenSuccess
 import com.rohan.streaky.ui.theme.OrangePrimary
 
 @Composable
@@ -35,9 +34,9 @@ fun AnimatedCheckButton(
 
     val scale by animateFloatAsState(
         targetValue = when {
-            pressed  -> 0.80f
-            checked  -> 1.0f
-            else     -> 1.0f
+            pressed -> 0.80f
+            checked -> 1.0f
+            else    -> 1.0f
         },
         animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
         label = "btnScale"
@@ -66,13 +65,10 @@ fun AnimatedCheckButton(
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .then(
-                if (!checked) Modifier.background(Color.Transparent).let { m ->
-                    m.then(
-                        Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(borderColor.copy(alpha = 0.12f))
-                    )
-                } else Modifier
+                if (!checked) Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(borderColor.copy(alpha = 0.12f))
+                else Modifier
             )
             .clickable(enabled = enabled) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
