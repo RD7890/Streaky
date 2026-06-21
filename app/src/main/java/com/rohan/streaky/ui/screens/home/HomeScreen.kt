@@ -13,13 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rohan.streaky.R
 import com.rohan.streaky.ui.components.ConfettiOverlay
 import com.rohan.streaky.ui.components.HabitCompletionRow
 import com.rohan.streaky.ui.theme.GreenSuccess
@@ -59,12 +60,23 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 24.dp)
                     ) {
-                        Text(
-                            "🔥 Streaky",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Black, color = OrangePrimary
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.flame_mascot_cool),
+                                contentDescription = null,
+                                modifier = Modifier.size(36.dp)
                             )
-                        )
+                            Text(
+                                "Streaky",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Black,
+                                    color = OrangePrimary
+                                )
+                            )
+                        }
                         Text(
                             dateLabel,
                             style = MaterialTheme.typography.bodyLarge.copy(
@@ -82,10 +94,10 @@ fun HomeScreen(
                 item {
                     val activeCount = state.habits.count { it.currentStreak > 0 }
                     SummaryCard(
-                        active = activeCount,
-                        total = state.habits.size,
+                        active    = activeCount,
+                        total     = state.habits.size,
                         doneToday = state.todayCompletions.size,
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier  = Modifier.padding(horizontal = 20.dp)
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -103,11 +115,11 @@ fun HomeScreen(
                     }
                     items(state.habits, key = { it.id }) { habit ->
                         HabitCompletionRow(
-                            habit = habit,
+                            habit       = habit,
                             isCompleted = state.todayCompletions.contains(habit.id),
-                            onToggle = { vm.toggleToday(habit) },
+                            onToggle    = { vm.toggleToday(habit) },
                             onHabitClick = { onHabitClick(habit.id) },
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                            modifier    = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
                         )
                     }
                 }
@@ -116,9 +128,9 @@ fun HomeScreen(
 
         if (state.showConfetti) {
             ConfettiOverlay(
-                active = true,
+                active   = true,
                 modifier = Modifier.zIndex(10f),
-                onDone = { vm.dismissConfetti() }
+                onDone   = { vm.dismissConfetti() }
             )
         }
     }
@@ -169,9 +181,9 @@ private fun SummaryCard(active: Int, total: Int, doneToday: Int, modifier: Modif
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatItem(total.toString(), "Total")
+            StatItem(total.toString(),     "Total")
             VerticalDivider()
-            StatItem(active.toString(), "On Streak", OrangePrimary)
+            StatItem(active.toString(),    "On Streak",  OrangePrimary)
             VerticalDivider()
             StatItem(doneToday.toString(), "Done Today", GreenSuccess)
         }
@@ -201,7 +213,11 @@ private fun EmptyState(onAdd: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("🔥", fontSize = 64.sp)
+        Image(
+            painter = painterResource(R.drawable.flame_mascot_standing),
+            contentDescription = "Start your streak",
+            modifier = Modifier.size(130.dp)
+        )
         Text("No habits yet", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
         Text(
             "Add your first habit and start building your streak today!",

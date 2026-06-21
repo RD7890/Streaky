@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rohan.streaky.R
 import com.rohan.streaky.data.db.entity.HabitEntity
 import com.rohan.streaky.ui.theme.OrangePrimary
 
@@ -59,7 +61,6 @@ fun HabitCompletionRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Streak counter (animated)
             AnimatedCounter(
                 count = habit.currentStreak,
                 modifier = Modifier.width(40.dp),
@@ -72,7 +73,6 @@ fun HabitCompletionRow(
 
             Spacer(Modifier.width(12.dp))
 
-            // Emoji icon circle
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -91,21 +91,33 @@ fun HabitCompletionRow(
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1
                 )
-                Text(
-                    text = habit.category + if (habit.currentStreak > 0) " · ${habit.currentStreak}d streak 🔥" else "",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    maxLines = 1
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = habit.category + if (habit.currentStreak > 0) " · ${habit.currentStreak}d streak" else "",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        maxLines = 1
+                    )
+                    if (habit.currentStreak > 0) {
+                        Image(
+                            painter = painterResource(R.drawable.flame_running),
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.width(12.dp))
 
             AnimatedCheckButton(
-                checked = isCompleted,
+                checked  = isCompleted,
                 onToggle = onToggle,
-                size = 44.dp
+                size     = 44.dp
             )
         }
     }

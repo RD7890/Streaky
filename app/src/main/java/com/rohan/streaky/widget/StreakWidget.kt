@@ -15,6 +15,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
 import com.rohan.streaky.MainActivity
+import com.rohan.streaky.R
 
 class StreakWidget : GlanceAppWidget() {
 
@@ -22,64 +23,69 @@ class StreakWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
-            val habitName = prefs[PREF_HABIT_NAME] ?: "Habit"
-            val streak    = prefs[PREF_STREAK]     ?: 0
-            val emoji     = prefs[PREF_EMOJI]      ?: "🔥"
-            val isDone    = prefs[PREF_DONE]       ?: false
+            val prefs      = currentState<androidx.datastore.preferences.core.Preferences>()
+            val habitName  = prefs[PREF_HABIT_NAME] ?: "Add a habit"
+            val streak     = prefs[PREF_STREAK]     ?: 0
+            val isDone     = prefs[PREF_DONE]       ?: false
 
-            GlanceTheme {
-                Box(
-                    modifier = GlanceModifier
-                        .fillMaxSize()
-                        .background(
-                            androidx.glance.ImageProvider(android.R.drawable.screen_background_light)
-                        )
-                        .appWidgetBackground()
-                        .padding(12.dp)
-                        .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
-                    contentAlignment = Alignment.Center
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .background(ColorProvider(android.graphics.Color.WHITE))
+                    .appWidgetBackground()
+                    .padding(12.dp)
+                    .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(emoji, style = TextStyle(fontSize = 28.sp))
-                        Spacer(GlanceModifier.height(4.dp))
+                    Image(
+                        provider = ImageProvider(
+                            if (isDone) R.drawable.flame_joy
+                            else if (streak > 0) R.drawable.flame_victory
+                            else R.drawable.flame_mascot_standing
+                        ),
+                        contentDescription = "Streak Mascot",
+                        modifier = GlanceModifier.size(52.dp)
+                    )
+                    Spacer(GlanceModifier.height(4.dp))
+                    Text(
+                        text = "$streak",
+                        style = TextStyle(
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(android.graphics.Color.parseColor("#FF6B1A"))
+                        )
+                    )
+                    Text(
+                        text = if (streak == 1) "day streak" else "days streak",
+                        style = TextStyle(
+                            fontSize = 11.sp,
+                            color = ColorProvider(android.graphics.Color.GRAY)
+                        )
+                    )
+                    Spacer(GlanceModifier.height(4.dp))
+                    Text(
+                        text = habitName,
+                        style = TextStyle(
+                            fontSize = 11.sp,
+                            color = ColorProvider(android.graphics.Color.DKGRAY),
+                            fontWeight = FontWeight.Medium
+                        ),
+                        maxLines = 1
+                    )
+                    if (isDone) {
+                        Spacer(GlanceModifier.height(2.dp))
                         Text(
-                            text = "$streak",
+                            "Done today!",
                             style = TextStyle(
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorProvider(android.graphics.Color.parseColor("#FF6B1A"))
+                                fontSize = 10.sp,
+                                color = ColorProvider(android.graphics.Color.parseColor("#22C55E")),
+                                fontWeight = FontWeight.Bold
                             )
                         )
-                        Text(
-                            text = "days",
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                color = ColorProvider(android.graphics.Color.GRAY)
-                            )
-                        )
-                        Spacer(GlanceModifier.height(4.dp))
-                        Text(
-                            text = habitName,
-                            style = TextStyle(
-                                fontSize = 11.sp,
-                                color = ColorProvider(android.graphics.Color.DKGRAY),
-                                fontWeight = FontWeight.Medium
-                            ),
-                            maxLines = 1
-                        )
-                        if (isDone) {
-                            Text(
-                                "✓ Done",
-                                style = TextStyle(
-                                    fontSize = 10.sp,
-                                    color = ColorProvider(android.graphics.Color.parseColor("#22C55E"))
-                                )
-                            )
-                        }
                     }
                 }
             }
@@ -89,7 +95,6 @@ class StreakWidget : GlanceAppWidget() {
     companion object {
         val PREF_HABIT_NAME = androidx.datastore.preferences.core.stringPreferencesKey("habit_name")
         val PREF_STREAK     = androidx.datastore.preferences.core.intPreferencesKey("streak")
-        val PREF_EMOJI      = androidx.datastore.preferences.core.stringPreferencesKey("emoji")
         val PREF_DONE       = androidx.datastore.preferences.core.booleanPreferencesKey("done")
     }
 }

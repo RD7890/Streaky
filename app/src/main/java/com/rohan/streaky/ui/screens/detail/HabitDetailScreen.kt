@@ -1,10 +1,10 @@
 package com.rohan.streaky.ui.screens.detail
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,14 +23,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rohan.streaky.R
 import com.rohan.streaky.ui.components.AnimatedCounter
 import com.rohan.streaky.ui.components.ConfettiOverlay
 import com.rohan.streaky.ui.theme.GreenSuccess
 import com.rohan.streaky.ui.theme.OrangePrimary
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,28 +74,24 @@ fun HabitDetailScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Hero streak card
                 HeroStreakCard(
                     habit = habit,
                     isCompletedToday = state.isCompletedToday,
                     onToggle = { vm.toggleToday() }
                 )
 
-                // Stats row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    StatCard("🏆", "Best", "${habit.bestStreak}d", Modifier.weight(1f))
-                    StatCard("✅", "Total", "${habit.totalCompletions}", Modifier.weight(1f))
-                    StatCard("🎯", "Goal", "${habit.goalDays}d", Modifier.weight(1f))
+                    StatCard(R.drawable.flame_victory,  "Best",  "${habit.bestStreak}d",          Modifier.weight(1f))
+                    StatCard(R.drawable.flame_joy,      "Total", "${habit.totalCompletions}",      Modifier.weight(1f))
+                    StatCard(R.drawable.flame_graduate, "Goal",  "${habit.goalDays}d",             Modifier.weight(1f))
                 }
 
-                // Progress
                 val progress = (habit.currentStreak.toFloat() / habit.goalDays.coerceAtLeast(1)).coerceIn(0f, 1f)
                 ProgressSection(progress = progress, current = habit.currentStreak, goal = habit.goalDays)
 
-                // Calendar
                 CalendarSection(
                     completedDays = state.completions.map { it.dateEpochDay }.toSet(),
                     modifier = Modifier.fillMaxWidth()
@@ -120,7 +115,7 @@ private fun HeroStreakCard(
 ) {
     val pulseAnim = rememberInfiniteTransition(label = "pulse")
     val pulse by pulseAnim.animateFloat(
-        1f, if (habit.currentStreak > 0) 1.05f else 1f,
+        1f, if (habit.currentStreak > 0) 1.06f else 1f,
         infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "p"
     )
@@ -139,9 +134,12 @@ private fun HeroStreakCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = habit.iconEmoji,
-                fontSize = (56 * pulse).sp
+            Image(
+                painter = painterResource(
+                    if (isCompletedToday) R.drawable.flame_joy else R.drawable.flame_victory
+                ),
+                contentDescription = "Streak",
+                modifier = Modifier.size((64 * pulse).dp)
             )
             AnimatedCounter(
                 count = habit.currentStreak,
@@ -150,12 +148,17 @@ private fun HeroStreakCard(
                     color = if (habit.currentStreak > 0) OrangePrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
-            Text(
-                text = if (habit.currentStreak == 1) "day streak 🔥" else "days streak 🔥",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = if (habit.currentStreak == 1) "day streak" else "days streak",
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
-            )
+                Image(
+                    painter = painterResource(R.drawable.flame_running),
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
@@ -186,7 +189,12 @@ private fun HeroStreakCard(
 }
 
 @Composable
-private fun StatCard(emoji: String, label: String, value: String, modifier: Modifier = Modifier) {
+private fun StatCard(
+    @DrawableRes iconRes: Int,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
@@ -198,9 +206,13 @@ private fun StatCard(emoji: String, label: String, value: String, modifier: Modi
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(emoji, fontSize = 22.sp)
+            Image(
+                painter = painterResource(iconRes),
+                contentDescription = label,
+                modifier = Modifier.size(40.dp)
+            )
             Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black, color = OrangePrimary))
-            Text(label, style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+            Text(label,  style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
         }
     }
 }
@@ -223,9 +235,9 @@ private fun ProgressSection(progress: Float, current: Int, goal: Int) {
 
 @Composable
 private fun CalendarSection(completedDays: Set<Long>, modifier: Modifier = Modifier) {
-    val today = LocalDate.now()
+    val today    = LocalDate.now()
     val startDay = today.minusDays(27)
-    val days = (0 until 28).map { startDay.plusDays(it.toLong()) }
+    val days     = (0 until 28).map { startDay.plusDays(it.toLong()) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Last 28 Days", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
@@ -238,7 +250,7 @@ private fun CalendarSection(completedDays: Set<Long>, modifier: Modifier = Modif
         ) {
             items(days) { day ->
                 val isCompleted = completedDays.contains(day.toEpochDay())
-                val isToday = day == today
+                val isToday     = day == today
                 Box(
                     modifier = Modifier
                         .aspectRatio(1f)
