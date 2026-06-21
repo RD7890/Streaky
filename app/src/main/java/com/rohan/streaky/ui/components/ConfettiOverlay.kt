@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
-import kotlin.math.*
 import kotlin.random.Random
 
 private data class Confetti(
@@ -28,6 +27,9 @@ private val ConfettiColors = listOf(
     Color(0xFFEC4899), Color(0xFFF59E0B)
 )
 
+private fun randomFloatInRange(from: Float, until: Float): Float =
+    Random.nextFloat() * (until - from) + from
+
 @Composable
 fun ConfettiOverlay(
     active: Boolean,
@@ -40,13 +42,13 @@ fun ConfettiOverlay(
         (0 until 60).map {
             Confetti(
                 x = Random.nextFloat(),
-                y = Random.nextFloat(-0.2f, 0f),
+                y = randomFloatInRange(-0.2f, 0f),
                 color = ConfettiColors.random(),
-                size = Random.nextFloat(8f, 20f),
-                angle = Random.nextFloat(0f, 360f),
-                speed = Random.nextFloat(0.003f, 0.009f),
-                drift = Random.nextFloat(-0.002f, 0.002f),
-                rotationSpeed = Random.nextFloat(-8f, 8f)
+                size = randomFloatInRange(8f, 20f),
+                angle = randomFloatInRange(0f, 360f),
+                speed = randomFloatInRange(0.003f, 0.009f),
+                drift = randomFloatInRange(-0.002f, 0.002f),
+                rotationSpeed = randomFloatInRange(-8f, 8f)
             )
         }
     }
