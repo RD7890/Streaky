@@ -40,7 +40,6 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
-      # ── Gradle installation & wrapper ─────────────────────────────────────────
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -58,72 +57,43 @@ jobs:
           unzip -q /tmp/gradle.zip -d /tmp/gradle-install
           echo "/tmp/gradle-install/gradle-${{ env.GRADLE_VERSION }}/bin" >> $GITHUB_PATH
 
-      - name: Verify Gradle & SDK compatibility
-        run: |
-          gradle --version
-          echo "Gradle ${{ env.GRADLE_VERSION }} + JDK ${{ env.JAVA_VERSION }} + AGP 8.5.2 ✓"
-          echo "Target compileSdk: ${{ env.ANDROID_COMPILE_SDK }}, minSdk: ${{ env.ANDROID_MIN_SDK }}"
-
-      - name: Generate Gradle Wrapper (ensures jar is present)
+      - name: Generate Gradle Wrapper
         run: |
           gradle wrapper --gradle-version ${{ env.GRADLE_VERSION }} --distribution-type bin
           chmod +x gradlew
-          ls -lh gradle/wrapper/
 
-      # ── Version bumping ───────────────────────────────────────────────────────
       - name: Compute version
         id: version
         run: |
           BUILD=${{ github.run_number }}
-          # Extract versionName base from build.gradle.kts (fallback 1.0)
           BASE=$(grep -oP '(?<=versionName = ")\d+\.\d+(?=\.)' app/build.gradle.kts | head -1 || echo "1.0")
           FULL="${BASE}.${BUILD}"
           echo "name=${FULL}" >> $GITHUB_OUTPUT
-          echo "code=${BUILD}"  >> $GITHUB_OUTPUT
+          echo "code=${BUILD}" >> $GITHUB_OUTPUT
           echo "Version: ${FULL} (code: ${BUILD})"
 
-      # ── Build ─────────────────────────────────────────────────────────────────
-      - name: Assemble Debug APKs (all ABIs)
-        env:
-          BUILD_NUMBER: ${{ github.run_number }}
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
-
-      - name: Assemble Release APKs (all ABIs)
+      - name: Assemble Release APKs
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: List generated APKs
-        run: |
-          echo "=== Debug APKs ==="
-          find app/build/outputs/apk/debug -name "*.apk" -exec ls -lh {} \;
-          echo "=== Release APKs ==="
-          find app/build/outputs/apk/release -name "*.apk" -exec ls -lh {} \;
+        run: find app/build/outputs/apk/release -name "*.apk" -exec ls -lh {} \;
 
-      # ── Rename APKs with version + ABI tags ──────────────────────────────────
-      - name: Rename APKs
+      - name: Collect APKs
         id: apks
         run: |
           VERSION=${{ steps.version.outputs.name }}
           BUILD=${{ github.run_number }}
           mkdir -p release-apks
-
-          for APK in app/build/outputs/apk/debug/*.apk; do
-            [ -f "$APK" ] || continue
-            FILENAME=$(basename "$APK" .apk)
-            cp "$APK" "release-apks/${FILENAME}-v${VERSION}-build${BUILD}.apk"
-          done
-
           for APK in app/build/outputs/apk/release/*.apk; do
             [ -f "$APK" ] || continue
             FILENAME=$(basename "$APK" .apk)
             cp "$APK" "release-apks/${FILENAME}-v${VERSION}-build${BUILD}.apk"
           done
-
           echo "=== Final APKs ==="
           ls -lh release-apks/
 
-      # ── GitHub Release ────────────────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -142,15 +112,13 @@ jobs:
             | JDK | ${{ env.JAVA_VERSION }} |
 
             ### 📦 APK Variants
-            | Variant | ABI | Type |
-            |---------|-----|------|
-            | arm64-v8a | ARM 64-bit | Debug + Release |
-            | armeabi-v7a | ARM 32-bit | Debug + Release |
-            | x86_64 | Intel 64-bit | Debug + Release |
-            | x86 | Intel 32-bit | Debug + Release |
-            | universal | All ABIs | Debug + Release |
-
-            > **Recommended**: `arm64-v8a` release for modern Android devices (2018+)
+            | Variant | ABI |
+            |---------|-----|
+            | arm64-v8a | ARM 64-bit (recommended for 2018+ devices) |
+            | armeabi-v7a | ARM 32-bit |
+            | x86_64 | Intel 64-bit |
+            | x86 | Intel 32-bit |
+            | universal | All ABIs |
           draft: false
           prerelease: ${{ github.ref_name != 'main' }}
           files: release-apks/*.apk
