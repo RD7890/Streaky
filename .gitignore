@@ -1,0 +1,25 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+keystore.properties
+
+# Gradle wrapper jar IS committed — it's needed to build
+# gradle/wrapper/gradle-wrapper.jar  <-- do NOT ignore
+
+# Build outputs
+app/build/
+**/build/
+
+# Generated files
+**/generated/
+
+# Kotlin/IDE
+**/.kotlin/
+*.kotlin_module

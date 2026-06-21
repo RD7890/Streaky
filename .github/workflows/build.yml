@@ -1,0 +1,158 @@
+name: Streaky CI/CD
+
+on:
+  push:
+    branches: [ "main", "dev", "release/**" ]
+    paths-ignore: [ "**.md" ]
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore: [ "**.md" ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: '17'
+  GRADLE_VERSION: '8.9'
+  ANDROID_COMPILE_SDK: '35'
+  ANDROID_MIN_SDK: '26'
+
+jobs:
+  build:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      # ── Gradle installation & wrapper ─────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ env.GRADLE_VERSION }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-${{ env.GRADLE_VERSION }}-
+            ${{ runner.os }}-gradle-
+
+      - name: Install Gradle ${{ env.GRADLE_VERSION }}
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-${{ env.GRADLE_VERSION }}-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp/gradle-install
+          echo "/tmp/gradle-install/gradle-${{ env.GRADLE_VERSION }}/bin" >> $GITHUB_PATH
+
+      - name: Verify Gradle & SDK compatibility
+        run: |
+          gradle --version
+          echo "Gradle ${{ env.GRADLE_VERSION }} + JDK ${{ env.JAVA_VERSION }} + AGP 8.5.2 ✓"
+          echo "Target compileSdk: ${{ env.ANDROID_COMPILE_SDK }}, minSdk: ${{ env.ANDROID_MIN_SDK }}"
+
+      - name: Generate Gradle Wrapper (ensures jar is present)
+        run: |
+          gradle wrapper --gradle-version ${{ env.GRADLE_VERSION }} --distribution-type bin
+          chmod +x gradlew
+          ls -lh gradle/wrapper/
+
+      # ── Version bumping ───────────────────────────────────────────────────────
+      - name: Compute version
+        id: version
+        run: |
+          BUILD=${{ github.run_number }}
+          # Extract versionName base from build.gradle.kts (fallback 1.0)
+          BASE=$(grep -oP '(?<=versionName = ")\d+\.\d+(?=\.)' app/build.gradle.kts | head -1 || echo "1.0")
+          FULL="${BASE}.${BUILD}"
+          echo "name=${FULL}" >> $GITHUB_OUTPUT
+          echo "code=${BUILD}"  >> $GITHUB_OUTPUT
+          echo "Version: ${FULL} (code: ${BUILD})"
+
+      # ── Build ─────────────────────────────────────────────────────────────────
+      - name: Assemble Debug APKs (all ABIs)
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Assemble Release APKs (all ABIs)
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: List generated APKs
+        run: |
+          echo "=== Debug APKs ==="
+          find app/build/outputs/apk/debug -name "*.apk" -exec ls -lh {} \;
+          echo "=== Release APKs ==="
+          find app/build/outputs/apk/release -name "*.apk" -exec ls -lh {} \;
+
+      # ── Rename APKs with version + ABI tags ──────────────────────────────────
+      - name: Rename APKs
+        id: apks
+        run: |
+          VERSION=${{ steps.version.outputs.name }}
+          BUILD=${{ github.run_number }}
+          mkdir -p release-apks
+
+          for APK in app/build/outputs/apk/debug/*.apk; do
+            [ -f "$APK" ] || continue
+            FILENAME=$(basename "$APK" .apk)
+            cp "$APK" "release-apks/${FILENAME}-v${VERSION}-build${BUILD}.apk"
+          done
+
+          for APK in app/build/outputs/apk/release/*.apk; do
+            [ -f "$APK" ] || continue
+            FILENAME=$(basename "$APK" .apk)
+            cp "$APK" "release-apks/${FILENAME}-v${VERSION}-build${BUILD}.apk"
+          done
+
+          echo "=== Final APKs ==="
+          ls -lh release-apks/
+
+      # ── GitHub Release ────────────────────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}-build.${{ github.run_number }}
+          name: "Streaky v${{ steps.version.outputs.name }} (Build #${{ github.run_number }})"
+          body: |
+            ## 🔥 Streaky v${{ steps.version.outputs.name }}
+
+            **Automated Release — Build #${{ github.run_number }}**
+
+            | Info | Value |
+            |------|-------|
+            | Branch | `${{ github.ref_name }}` |
+            | Commit | `${{ github.sha }}` |
+            | Gradle | ${{ env.GRADLE_VERSION }} |
+            | JDK | ${{ env.JAVA_VERSION }} |
+
+            ### 📦 APK Variants
+            | Variant | ABI | Type |
+            |---------|-----|------|
+            | arm64-v8a | ARM 64-bit | Debug + Release |
+            | armeabi-v7a | ARM 32-bit | Debug + Release |
+            | x86_64 | Intel 64-bit | Debug + Release |
+            | x86 | Intel 32-bit | Debug + Release |
+            | universal | All ABIs | Debug + Release |
+
+            > **Recommended**: `arm64-v8a` release for modern Android devices (2018+)
+          draft: false
+          prerelease: ${{ github.ref_name != 'main' }}
+          files: release-apks/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
