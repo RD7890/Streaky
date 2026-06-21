@@ -1,6 +1,7 @@
 package com.rohan.streaky.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
@@ -32,12 +33,11 @@ class StreakWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxSize()
                         .background(
-                            if (isDone) androidx.glance.ImageProvider(android.R.drawable.screen_background_light)
-                            else androidx.glance.ImageProvider(android.R.drawable.screen_background_light)
+                            androidx.glance.ImageProvider(android.R.drawable.screen_background_light)
                         )
                         .appWidgetBackground()
                         .padding(12.dp)
-                        .clickable(actionStartActivity<MainActivity>()),
+                        .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
