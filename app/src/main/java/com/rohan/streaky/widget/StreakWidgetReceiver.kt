@@ -9,6 +9,7 @@ import com.rohan.streaky.di.WidgetEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import java.time.LocalDate
 
 class StreakWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = StreakWidget()
@@ -19,26 +20,45 @@ class StreakWidgetReceiver : GlanceAppWidgetReceiver() {
         appWidgetIds: IntArray
     ) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
-        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+        refreshWidgetData(context)
+    }
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        refreshWidgetData(context)
+    }
+
+    private fun refreshWidgetData(context: Context) {
+        val appContext = context.applicationContext
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext,
+                    appContext,
                     WidgetEntryPoint::class.java
                 )
-                val habits = entryPoint.habitDao().getAllHabits().first()
-                val glanceIds = GlanceAppWidgetManager(context)
-                    .getGlanceIds(StreakWidget::class.java)
-                val habit = habits.firstOrNull()
+                val habitDao = entryPoint.habitDao()
+                val habits   = habitDao.getAllHabits().first()
+                val habit    = habits.firstOrNull()
+
+                val todayEpoch = LocalDate.now().toEpochDay()
+                val isDone = if (habit != null) {
+                    entryPoint.completionDao()
+                        .getCompletionForDay(habit.id, todayEpoch) != null
+                } else false
+
+                val glanceManager = GlanceAppWidgetManager(appContext)
+                val glanceIds = glanceManager.getGlanceIds(StreakWidget::class.java)
+
                 glanceIds.forEach { glanceId ->
-                    updateAppWidgetState(context, glanceId) { prefs ->
+                    updateAppWidgetState(appContext, glanceId) { prefs ->
                         prefs[StreakWidget.PREF_HABIT_NAME] = habit?.name ?: "Add a habit"
                         prefs[StreakWidget.PREF_STREAK]     = habit?.currentStreak ?: 0
-                        prefs[StreakWidget.PREF_DONE]       = false
+                        prefs[StreakWidget.PREF_DONE]       = isDone
                     }
-                    glanceAppWidget.update(context, glanceId)
+                    glanceAppWidget.update(appContext, glanceId)
                 }
             } catch (e: Exception) {
-                // Widget will show default empty state
+                // Widget shows default empty state on error — not a fatal crash
             }
         }
     }

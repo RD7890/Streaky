@@ -1,6 +1,8 @@
 package com.rohan.streaky.ui.components
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -14,7 +16,8 @@ private data class Confetti(
     val x: Float,
     val y: Float,
     val color: Color,
-    val size: Float,
+    val width: Float,
+    val height: Float,
     val angle: Float,
     val speed: Float,
     val drift: Float,
@@ -27,9 +30,6 @@ private val ConfettiColors = listOf(
     Color(0xFFEC4899), Color(0xFFF59E0B)
 )
 
-private fun randomFloatInRange(from: Float, until: Float): Float =
-    Random.nextFloat() * (until - from) + from
-
 @Composable
 fun ConfettiOverlay(
     active: Boolean,
@@ -39,44 +39,54 @@ fun ConfettiOverlay(
     if (!active) return
 
     val particles = remember {
-        (0 until 60).map {
+        (0 until 70).map {
             Confetti(
-                x = Random.nextFloat(),
-                y = randomFloatInRange(-0.2f, 0f),
-                color = ConfettiColors.random(),
-                size = randomFloatInRange(8f, 20f),
-                angle = randomFloatInRange(0f, 360f),
-                speed = randomFloatInRange(0.003f, 0.009f),
-                drift = randomFloatInRange(-0.002f, 0.002f),
-                rotationSpeed = randomFloatInRange(-8f, 8f)
+                x             = Random.nextFloat(),
+                y             = Random.nextFloat() * -0.25f,        // start just above screen
+                color         = ConfettiColors.random(),
+                width         = Random.nextFloat() * 10f + 6f,      // 6–16px wide
+                height        = Random.nextFloat() * 6f + 3f,       // 3–9px tall
+                angle         = Random.nextFloat() * 360f,
+                speed         = Random.nextFloat() * 0.4f + 0.3f,   // 0.3–0.7 screen/s (normalised to duration)
+                drift         = Random.nextFloat() * 0.12f - 0.06f, // ±6% horizontal over full run
+                rotationSpeed = Random.nextFloat() * 240f - 120f    // ±120°/s
             )
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "confetti")
-    val time by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue  = 1f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing)),
-        label = "time"
-    )
+    val progress = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(2200)
+        progress.animateTo(
+            targetValue   = 1f,
+            animationSpec = tween(durationMillis = 3000, easing = LinearEasing)
+        )
         onDone()
     }
 
+    val time = progress.value
+
     Canvas(modifier = modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+
         particles.forEach { p ->
-            val cx = (p.x + p.drift * time * 1000f) * size.width
-            val cy = (p.y + p.speed * time * 1000f) * size.height
-            val rot = p.angle + p.rotationSpeed * time * 100f
-            if (cy < size.height + 50f) {
+            val cx  = (p.x + p.drift * time) * w
+            val cy  = (p.y + p.speed * time) * h
+            val rot = p.angle + p.rotationSpeed * time
+
+            // fade out in the last 30% of the animation
+            val alpha = when {
+                time > 0.7f -> ((1f - time) / 0.3f).coerceIn(0f, 1f)
+                else        -> 1f
+            }
+
+            if (cy < h + p.height * 2) {
                 rotate(rot, Offset(cx, cy)) {
                     drawRect(
-                        color = p.color.copy(alpha = (1f - time).coerceAtLeast(0f)),
-                        topLeft = Offset(cx - p.size / 2, cy - p.size / 4),
-                        size = androidx.compose.ui.geometry.Size(p.size, p.size / 2)
+                        color   = p.color.copy(alpha = alpha),
+                        topLeft = Offset(cx - p.width / 2f, cy - p.height / 2f),
+                        size    = androidx.compose.ui.geometry.Size(p.width, p.height)
                     )
                 }
             }

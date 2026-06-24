@@ -30,9 +30,9 @@ fun HabitCompletionRow(
 ) {
     var tapped by remember { mutableStateOf(false) }
     val cardScale by animateFloatAsState(
-        targetValue = if (tapped) 0.97f else 1f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
-        label = "cardScale",
+        targetValue   = if (tapped) 0.97f else 1f,
+        animationSpec = tween(120, easing = FastOutSlowInEasing),
+        label         = "cardScale",
         finishedListener = { tapped = false }
     )
 
@@ -44,7 +44,7 @@ fun HabitCompletionRow(
                 tapped = true
                 onHabitClick()
             },
-        shape = RoundedCornerShape(16.dp),
+        shape  = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isCompleted)
                 OrangePrimary.copy(alpha = 0.08f)
@@ -62,12 +62,12 @@ fun HabitCompletionRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AnimatedCounter(
-                count = habit.currentStreak,
+                count    = habit.currentStreak,
                 modifier = Modifier.width(40.dp),
-                style = MaterialTheme.typography.titleLarge.copy(
+                style    = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Black,
-                    fontSize = 22.sp,
-                    color = if (habit.currentStreak > 0) OrangePrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize   = 22.sp,
+                    color      = if (habit.currentStreak > 0) OrangePrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
 
@@ -87,16 +87,16 @@ fun HabitCompletionRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = habit.name,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    text   = habit.name,
+                    style  = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1
                 )
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment    = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
-                        text = habit.category + if (habit.currentStreak > 0) " · ${habit.currentStreak}d streak" else "",
+                        text  = habit.category + if (habit.currentStreak > 0) " · ${habit.currentStreak}d streak" else "",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -104,9 +104,9 @@ fun HabitCompletionRow(
                     )
                     if (habit.currentStreak > 0) {
                         Image(
-                            painter = painterResource(R.drawable.flame_running),
+                            painter           = painterResource(R.drawable.flame_running),
                             contentDescription = null,
-                            modifier = Modifier.size(13.dp)
+                            modifier          = Modifier.size(13.dp)
                         )
                     }
                 }

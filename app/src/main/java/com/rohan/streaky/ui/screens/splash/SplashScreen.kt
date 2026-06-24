@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,24 +22,22 @@ fun SplashScreen(onFinished: () -> Unit) {
         onFinished()
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "splash")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.92f,
-        targetValue  = 1.08f,
-        animationSpec = infiniteRepeatable(
-            tween(800, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse
-        ),
-        label = "scale"
+    var visible by remember { mutableStateOf(false) }
+    val logoAlpha by animateFloatAsState(
+        targetValue    = if (visible) 1f else 0f,
+        animationSpec  = tween(500, easing = FastOutSlowInEasing),
+        label          = "logoAlpha"
+    )
+    val logoScale by animateFloatAsState(
+        targetValue   = if (visible) 1f else 0.88f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label         = "logoScale"
     )
 
-    var visible by remember { mutableStateOf(false) }
-    val logoScale by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
-        label = "logo"
-    )
-    LaunchedEffect(Unit) { delay(100); visible = true }
+    LaunchedEffect(Unit) {
+        delay(80)
+        visible = true
+    }
 
     Box(
         modifier = Modifier
@@ -50,26 +47,25 @@ fun SplashScreen(onFinished: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .scale(logoScale)
         ) {
             Text(
-                text = "🔥",
-                fontSize = (80 * logoScale).sp,
-                modifier = Modifier.scale(scale * logoScale)
+                text     = "🔥",
+                fontSize = (80 * logoAlpha).coerceAtLeast(1f).sp
             )
             Text(
-                text = "Streaky",
+                text  = "Streaky",
                 style = MaterialTheme.typography.displaySmall.copy(
                     fontWeight = FontWeight.Black,
-                    color = OrangePrimary,
-                    fontSize = (36 * logoScale).sp
+                    color      = OrangePrimary
                 )
             )
             Text(
-                text = "Build habits that stick",
+                text  = "Build habits that stick",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = (16 * logoScale).sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

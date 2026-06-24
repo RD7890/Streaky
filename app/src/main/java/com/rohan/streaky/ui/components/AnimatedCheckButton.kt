@@ -29,33 +29,30 @@ fun AnimatedCheckButton(
     size: Dp = 48.dp,
     enabled: Boolean = true
 ) {
-    val haptic = LocalHapticFeedback.current
+    val haptic  = LocalHapticFeedback.current
     var pressed by remember { mutableStateOf(false) }
 
     val scale by animateFloatAsState(
-        targetValue = when {
-            pressed -> 0.80f
-            checked -> 1.0f
-            else    -> 1.0f
-        },
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
-        label = "btnScale"
+        targetValue   = if (pressed) 0.82f else 1f,
+        animationSpec = tween(120, easing = FastOutSlowInEasing),
+        label         = "btnScale",
+        finishedListener = { pressed = false }
     )
 
     val bgColor by animateColorAsState(
-        targetValue = if (checked) OrangePrimary else Color.Transparent,
-        animationSpec = tween(200),
-        label = "bgColor"
+        targetValue   = if (checked) OrangePrimary else Color.Transparent,
+        animationSpec = tween(180),
+        label         = "bgColor"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (checked) OrangePrimary else Color(0xFFDDDDDD),
-        animationSpec = tween(200),
-        label = "border"
+        targetValue   = if (checked) OrangePrimary else Color(0xFFDDDDDD),
+        animationSpec = tween(180),
+        label         = "border"
     )
     val iconAlpha by animateFloatAsState(
-        targetValue = if (checked) 1f else 0f,
+        targetValue   = if (checked) 1f else 0f,
         animationSpec = tween(150),
-        label = "iconAlpha"
+        label         = "iconAlpha"
     )
 
     Box(
@@ -79,10 +76,10 @@ fun AnimatedCheckButton(
     ) {
         if (checked) {
             Icon(
-                imageVector = Icons.Filled.Check,
+                imageVector     = Icons.Filled.Check,
                 contentDescription = "Done",
-                tint = Color.White.copy(alpha = iconAlpha),
-                modifier = Modifier.size(size * 0.55f)
+                tint            = Color.White.copy(alpha = iconAlpha),
+                modifier        = Modifier.size(size * 0.55f)
             )
         }
     }
