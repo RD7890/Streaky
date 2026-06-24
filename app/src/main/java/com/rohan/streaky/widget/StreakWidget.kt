@@ -2,6 +2,7 @@ package com.rohan.streaky.widget
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
@@ -26,64 +27,52 @@ class StreakWidget : GlanceAppWidget() {
             val streak    = prefs[PREF_STREAK]     ?: 0
             val isDone    = prefs[PREF_DONE]       ?: false
 
-            val mascotEmoji = when {
-                isDone     -> "🎉"
-                streak > 7 -> "🔥"
-                streak > 0 -> "✨"
-                else       -> "💤"
-            }
-
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .appWidgetBackground()
-                    .background(ColorProvider(android.graphics.Color.WHITE))
+                    .background(ColorProvider(android.graphics.Color.parseColor("#1C1C1E")))
                     .padding(12.dp)
                     .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment   = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = mascotEmoji,
-                        style = TextStyle(fontSize = 32.sp)
-                    )
-                    Spacer(GlanceModifier.height(2.dp))
-                    Text(
-                        text = streak.toString(),
+                        text  = streak.toString(),
                         style = TextStyle(
-                            fontSize = 34.sp,
+                            fontSize   = 42.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorProvider(android.graphics.Color.parseColor("#FF6B1A"))
+                            color      = ColorProvider(android.graphics.Color.parseColor("#FF6B1A"))
                         )
                     )
                     Text(
-                        text = if (streak == 1) "day streak" else "days streak",
+                        text  = if (streak == 1) "day streak" else "days streak",
                         style = TextStyle(
                             fontSize = 11.sp,
-                            color = ColorProvider(android.graphics.Color.GRAY)
+                            color    = ColorProvider(android.graphics.Color.parseColor("#AAAAAA"))
                         )
                     )
-                    Spacer(GlanceModifier.height(4.dp))
+                    Spacer(GlanceModifier.height(6.dp))
                     Text(
-                        text = habitName,
+                        text  = habitName,
                         style = TextStyle(
-                            fontSize = 11.sp,
+                            fontSize   = 11.sp,
                             fontWeight = FontWeight.Medium,
-                            color = ColorProvider(android.graphics.Color.DKGRAY)
+                            color      = ColorProvider(android.graphics.Color.WHITE)
                         ),
                         maxLines = 1
                     )
                     if (isDone) {
-                        Spacer(GlanceModifier.height(2.dp))
+                        Spacer(GlanceModifier.height(4.dp))
                         Text(
-                            text = "Done today! ✓",
+                            text  = "Done today",
                             style = TextStyle(
-                                fontSize = 10.sp,
+                                fontSize   = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = ColorProvider(android.graphics.Color.parseColor("#22C55E"))
+                                color      = ColorProvider(android.graphics.Color.parseColor("#22C55E"))
                             )
                         )
                     }

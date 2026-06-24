@@ -1,25 +1,26 @@
 package com.rohan.streaky.ui.screens.add
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rohan.streaky.ui.theme.OrangePrimary
+import com.rohan.streaky.ui.utils.CategoryIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +65,6 @@ fun AddHabitScreen(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Habit name
             SectionLabel("Habit Name")
             OutlinedTextField(
                 value = state.name,
@@ -74,19 +74,14 @@ fun AddHabitScreen(
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = OrangePrimary,
+                    focusedBorderColor   = OrangePrimary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 )
             )
 
-            // Category picker
             SectionLabel("Category")
-            LazyHorizontalRow(
-                selectedCategory = state.category,
-                onSelect = vm::setCategory
-            )
+            CategoryRow(selectedCategory = state.category, onSelect = vm::setCategory)
 
-            // Goal days
             SectionLabel("Goal — ${state.goalDays} days")
             Slider(
                 value = state.goalDays.toFloat(),
@@ -96,39 +91,43 @@ fun AddHabitScreen(
                 colors = SliderDefaults.colors(thumbColor = OrangePrimary, activeTrackColor = OrangePrimary)
             )
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                Text("7 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("7 days",   style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("365 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            // Active days
             SectionLabel("Repeat Days")
             ActiveDaysPicker(selected = state.selectedDays, onToggle = vm::toggleDay)
 
-            // Reminder
             SectionLabel("Daily Reminder")
             ReminderRow(
-                enabled = state.reminderEnabled,
-                hour = state.reminderHour,
-                minute = state.reminderMinute,
-                onToggle = vm::toggleReminder,
+                enabled      = state.reminderEnabled,
+                hour         = state.reminderHour,
+                minute       = state.reminderMinute,
+                onToggle     = vm::toggleReminder,
                 onTimeChange = vm::setReminder
             )
 
-            // Preview
             SectionLabel("Preview")
-            HabitPreviewCard(name = state.name, emoji = state.emoji, colorHex = state.colorHex, goalDays = state.goalDays)
+            HabitPreviewCard(
+                name     = state.name,
+                iconName = state.iconName,
+                colorHex = state.colorHex,
+                goalDays = state.goalDays
+            )
 
             Spacer(Modifier.height(32.dp))
 
             Button(
-                onClick = { vm.save() },
+                onClick  = { vm.save() },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = state.name.isNotBlank() && !state.isSaving,
-                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
-                shape = RoundedCornerShape(16.dp)
+                enabled  = state.name.isNotBlank() && !state.isSaving,
+                colors   = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                shape    = RoundedCornerShape(16.dp)
             ) {
-                if (state.isSaving) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-                else Text("Create Habit 🔥", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (state.isSaving)
+                    CircularProgressIndicator(Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                else
+                    Text("Create Habit", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }
@@ -136,24 +135,43 @@ fun AddHabitScreen(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant))
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontWeight = FontWeight.SemiBold,
+            color      = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
 }
 
 @Composable
-private fun LazyHorizontalRow(selectedCategory: String, onSelect: (String) -> Unit) {
+private fun CategoryRow(selectedCategory: String, onSelect: (String) -> Unit) {
     Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        modifier              = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Categories.forEach { (cat, emoji) ->
-            val selected = cat == selectedCategory
+        Categories.forEach { cat ->
+            val selected  = cat == selectedCategory
+            val iconRes   = CategoryIcons.drawableRes(CategoryIcons.forCategory(cat))
             FilterChip(
                 selected = selected,
-                onClick = { onSelect(cat) },
-                label = { Text("$emoji $cat") },
+                onClick  = { onSelect(cat) },
+                label    = {
+                    Row(
+                        verticalAlignment      = Alignment.CenterVertically,
+                        horizontalArrangement  = Arrangement.spacedBy(4.dp)
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter            = painterResource(iconRes),
+                            contentDescription = cat,
+                            modifier           = Modifier.size(16.dp)
+                        )
+                        Text(cat)
+                    }
+                },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = OrangePrimary,
-                    selectedLabelColor = Color.White
+                    selectedLabelColor     = Color.White
                 ),
                 shape = RoundedCornerShape(10.dp)
             )
@@ -163,13 +181,13 @@ private fun LazyHorizontalRow(selectedCategory: String, onSelect: (String) -> Un
 
 @Composable
 private fun ActiveDaysPicker(selected: Set<Int>, onToggle: (Int) -> Unit) {
-    val labels = listOf("M","T","W","T","F","S","S")
+    val labels = listOf("M", "T", "W", "T", "F", "S", "S")
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         labels.forEachIndexed { index, label ->
-            val day = index + 1
+            val day        = index + 1
             val isSelected = selected.contains(day)
             Box(
                 modifier = Modifier
@@ -183,7 +201,7 @@ private fun ActiveDaysPicker(selected: Set<Int>, onToggle: (Int) -> Unit) {
                     label,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        color      = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
             }
@@ -197,15 +215,20 @@ private fun ReminderRow(
     onToggle: () -> Unit, onTimeChange: (Int, Int) -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape     = RoundedCornerShape(12.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("🔔", fontSize = 20.sp)
+            Icon(
+                imageVector        = Icons.Outlined.Notifications,
+                contentDescription = "Reminder",
+                tint               = OrangePrimary,
+                modifier           = Modifier.size(22.dp)
+            )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text("Daily Reminder", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
@@ -215,35 +238,47 @@ private fun ReminderRow(
                 )
             }
             Switch(
-                checked = enabled,
+                checked         = enabled,
                 onCheckedChange = { onToggle() },
-                colors = SwitchDefaults.colors(checkedThumbColor = OrangePrimary, checkedTrackColor = OrangePrimary.copy(alpha = 0.3f))
+                colors          = SwitchDefaults.colors(
+                    checkedThumbColor  = OrangePrimary,
+                    checkedTrackColor  = OrangePrimary.copy(alpha = 0.3f)
+                )
             )
         }
     }
 }
 
 @Composable
-private fun HabitPreviewCard(name: String, emoji: String, colorHex: String, goalDays: Int) {
+private fun HabitPreviewCard(name: String, iconName: String, colorHex: String, goalDays: Int) {
+    val iconRes = CategoryIcons.drawableRes(iconName)
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border    = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(try { Color(android.graphics.Color.parseColor(colorHex)) } catch(e: Exception) { OrangePrimary }.copy(alpha = 0.15f)),
+                    .background(
+                        try { Color(android.graphics.Color.parseColor(colorHex)) }
+                        catch (e: Exception) { OrangePrimary }
+                            .copy(alpha = 0.15f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(emoji.ifBlank { "🔥" }, fontSize = 22.sp)
+                androidx.compose.foundation.Image(
+                    painter            = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier           = Modifier.size(26.dp)
+                )
             }
             Spacer(Modifier.width(12.dp))
             Column {

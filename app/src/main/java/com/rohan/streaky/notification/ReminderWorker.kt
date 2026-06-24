@@ -26,28 +26,31 @@ class ReminderWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val habitId = inputData.getLong("habitId", -1L)
         if (habitId < 0) return Result.failure()
-
         val habit = habitDao.getHabitById(habitId).first() ?: return Result.failure()
-        sendNotification(habit.name, habit.iconEmoji, habit.currentStreak)
+        sendNotification(habit.name, habit.currentStreak)
         return Result.success()
     }
 
-    private fun sendNotification(habitName: String, emoji: String, streak: Int) {
+    private fun sendNotification(habitName: String, streak: Int) {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pi = PendingIntent.getActivity(
-            applicationContext, 0, intent,
+            applicationContext, habitName.hashCode(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val streakText = if (streak > 0) "Keep your $streak-day streak alive!" else "Start your streak today!"
+        val body = if (streak > 0)
+            "You're on a $streak-day streak. Keep it going — check in now."
+        else
+            "Start your streak today. Open Streaky and mark it done."
+
         val notification = NotificationCompat.Builder(applicationContext, StreakApp.NOTIF_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("$emoji $habitName")
-            .setContentText(streakText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText("$streakText\n🔥 Don't break the chain — check in now!"))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(habitName)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pi)
             .setAutoCancel(true)
             .build()
@@ -71,10 +74,10 @@ class GlobalReminderWorker @AssistedInject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(applicationContext, StreakApp.NOTIF_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("🔥 Don't break the streak!")
-            .setContentText("Check in your habits for today")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Streak reminder")
+            .setContentText("Check in your habits for today.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pi)
             .setAutoCancel(true)
             .build()
