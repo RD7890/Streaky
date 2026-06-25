@@ -21,11 +21,11 @@ import com.rohan.streaky.R
 
 // CRITICAL: Never pass android.graphics.Color ARGB ints to ColorProvider(Int) — that
 // constructor expects a @ColorRes resource ID. Always use ColorProvider(Color(argbInt)).
-private val WHITE_SOLID  = ColorProvider(Color(0xFFFFFFFF.toInt()))
-private val WHITE_TEXT   = ColorProvider(Color(0xFFFFFFFF.toInt()))
-private val WHITE_80     = ColorProvider(Color(0xCCFFFFFF.toInt()))
-private val GREEN_DONE   = ColorProvider(Color(0xFF4ADE80.toInt()))
-private val ORANGE_DEF   = 0xFFFF6B1A.toInt()
+private val WHITE_SOLID = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val WHITE_TEXT  = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val WHITE_80    = ColorProvider(Color(0xCCFFFFFF.toInt()))
+private val GREEN_DONE  = ColorProvider(Color(0xFF4ADE80.toInt()))
+private val ORANGE_DEF  = 0xFFFF6B1A.toInt()
 
 class StreakWidget : GlanceAppWidget() {
 
@@ -47,7 +47,7 @@ class StreakWidget : GlanceAppWidget() {
             android.graphics.Color.parseColor(colorHex)
         } catch (e: Exception) { ORANGE_DEF }
 
-        // Slightly darker shade for the top section — creates natural depth
+        // Darker shade for the top header — creates visual depth
         val darkArgb = android.graphics.Color.argb(
             255,
             (android.graphics.Color.red(argb)   * 0.78).toInt().coerceIn(0, 255),
@@ -55,9 +55,9 @@ class StreakWidget : GlanceAppWidget() {
             (android.graphics.Color.blue(argb)  * 0.78).toInt().coerceIn(0, 255)
         )
 
-        val topBg      = ColorProvider(Color(darkArgb))   // darker variant for header
-        val midAccent  = ColorProvider(Color(argb))        // habit color for streak number on white
-        val bottomBg   = ColorProvider(Color(argb))        // full habit color for status area
+        val topBg     = ColorProvider(Color(darkArgb))
+        val midAccent = ColorProvider(Color(argb))
+        val bottomBg  = ColorProvider(Color(argb))
 
         val mascotRes = when {
             isDone       -> R.drawable.flame_joy
@@ -81,13 +81,13 @@ class StreakWidget : GlanceAppWidget() {
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── TOP: Habit name (darker shade) ─────────────────────
+            // ── TOP: Habit name on darker header ───────────────────
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .defaultWeight(1.8f)
+                    .height(40.dp)
                     .background(topBg)
-                    .padding(horizontal = 14.dp, vertical = 0.dp),
+                    .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -95,7 +95,7 @@ class StreakWidget : GlanceAppWidget() {
                     maxLines = 1,
                     style    = TextStyle(
                         color      = WHITE_TEXT,
-                        fontSize   = 15.sp,
+                        fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -105,9 +105,9 @@ class StreakWidget : GlanceAppWidget() {
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .defaultWeight(3f)
+                    .height(82.dp)
                     .background(WHITE_SOLID)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -124,7 +124,7 @@ class StreakWidget : GlanceAppWidget() {
                         text  = streak.toString(),
                         style = TextStyle(
                             color      = midAccent,
-                            fontSize   = 54.sp,
+                            fontSize   = 52.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -140,12 +140,11 @@ class StreakWidget : GlanceAppWidget() {
                 }
             }
 
-            // ── BOTTOM: Status text ─────────────────────────────────
+            // ── BOTTOM: Status — fills the rest ────────────────────
             Box(
                 modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .defaultWeight(1.5f)
-                    .padding(horizontal = 12.dp, vertical = 0.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(

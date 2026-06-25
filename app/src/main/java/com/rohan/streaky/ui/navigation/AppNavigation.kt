@@ -49,7 +49,6 @@ private fun NavBackStackEntry.isTab() = destination.route in TAB_ROUTES
 
 // Smooth, natural easing spec used for all transitions
 private val smoothSpec = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
-private val pushSpec   = tween<IntOffset>(durationMillis = 220, easing = FastOutSlowInEasing)
 
 @Composable
 fun AppNavigation() {
@@ -150,21 +149,21 @@ fun AppNavigation() {
                 if (initialState.isTab() && targetState.isTab()) {
                     fadeIn(smoothSpec)
                 } else {
-                    fadeIn(smoothSpec) + slideInHorizontally(pushSpec) { it / 6 }
+                    fadeIn(smoothSpec) + slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 6 }
                 }
             },
             exitTransition = {
                 if (initialState.isTab() && targetState.isTab()) {
                     fadeOut(smoothSpec)
                 } else {
-                    fadeOut(smoothSpec) + slideOutHorizontally(pushSpec) { -it / 6 }
+                    fadeOut(smoothSpec) + slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 6 }
                 }
             },
             popEnterTransition  = {
-                fadeIn(smoothSpec) + slideInHorizontally(pushSpec) { -it / 6 }
+                fadeIn(smoothSpec) + slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 6 }
             },
             popExitTransition   = {
-                fadeOut(smoothSpec) + slideOutHorizontally(pushSpec) { it / 6 }
+                fadeOut(smoothSpec) + slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 6 }
             }
         ) {
             composable(Screen.Splash.route) {
