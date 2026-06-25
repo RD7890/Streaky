@@ -16,6 +16,14 @@ import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
 import com.rohan.streaky.MainActivity
 
+// IMPORTANT: Never pass android.graphics.Color values to Glance's ColorProvider(Int) —
+// that constructor expects a @ColorRes resource ID. Always use ColorProvider(Color(argbInt)).
+private val BgColor     = ColorProvider(Color(0xFF1C1C1E.toInt()))
+private val OrangeColor = ColorProvider(Color(0xFFFF6B1A.toInt()))
+private val GrayColor   = ColorProvider(Color(0xFFAAAAAA.toInt()))
+private val WhiteColor  = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val GreenColor  = ColorProvider(Color(0xFF22C55E.toInt()))
+
 class StreakWidget : GlanceAppWidget() {
 
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
@@ -31,9 +39,11 @@ class StreakWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .appWidgetBackground()
-                    .background(ColorProvider(android.graphics.Color.parseColor("#1C1C1E")))
+                    .background(BgColor)
                     .padding(12.dp)
-                    .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
+                    .clickable(
+                        actionStartActivity(Intent(context, MainActivity::class.java))
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -45,23 +55,23 @@ class StreakWidget : GlanceAppWidget() {
                         style = TextStyle(
                             fontSize   = 42.sp,
                             fontWeight = FontWeight.Bold,
-                            color      = ColorProvider(android.graphics.Color.parseColor("#FF6B1A"))
+                            color      = OrangeColor
                         )
                     )
                     Text(
                         text  = if (streak == 1) "day streak" else "days streak",
                         style = TextStyle(
                             fontSize = 11.sp,
-                            color    = ColorProvider(android.graphics.Color.parseColor("#AAAAAA"))
+                            color    = GrayColor
                         )
                     )
                     Spacer(GlanceModifier.height(6.dp))
                     Text(
-                        text  = habitName,
-                        style = TextStyle(
+                        text     = habitName,
+                        style    = TextStyle(
                             fontSize   = 11.sp,
                             fontWeight = FontWeight.Medium,
-                            color      = ColorProvider(android.graphics.Color.WHITE)
+                            color      = WhiteColor
                         ),
                         maxLines = 1
                     )
@@ -72,7 +82,7 @@ class StreakWidget : GlanceAppWidget() {
                             style = TextStyle(
                                 fontSize   = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color      = ColorProvider(android.graphics.Color.parseColor("#22C55E"))
+                                color      = GreenColor
                             )
                         )
                     }

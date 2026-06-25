@@ -1,6 +1,7 @@
 package com.rohan.streaky.ui.screens.splash
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -9,9 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.rohan.streaky.R
 import com.rohan.streaky.ui.theme.OrangePrimary
 import kotlinx.coroutines.delay
 
@@ -24,9 +26,9 @@ fun SplashScreen(onFinished: () -> Unit) {
 
     var visible by remember { mutableStateOf(false) }
     val logoAlpha by animateFloatAsState(
-        targetValue    = if (visible) 1f else 0f,
-        animationSpec  = tween(500, easing = FastOutSlowInEasing),
-        label          = "logoAlpha"
+        targetValue   = if (visible) 1f else 0f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label         = "logoAlpha"
     )
     val logoScale by animateFloatAsState(
         targetValue   = if (visible) 1f else 0.88f,
@@ -40,7 +42,7 @@ fun SplashScreen(onFinished: () -> Unit) {
     }
 
     Box(
-        modifier = Modifier
+        modifier         = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
@@ -48,12 +50,13 @@ fun SplashScreen(onFinished: () -> Unit) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .scale(logoScale)
+            modifier            = Modifier.scale(logoScale)
         ) {
-            Text(
-                text     = "🔥",
-                fontSize = (80 * logoAlpha).coerceAtLeast(1f).sp
+            Image(
+                painter            = painterResource(R.drawable.flame_running),
+                contentDescription = "Streaky",
+                modifier           = Modifier
+                    .size((80 * logoAlpha).coerceAtLeast(1f).dp)
             )
             Text(
                 text  = "Streaky",

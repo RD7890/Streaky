@@ -23,13 +23,13 @@ import com.rohan.streaky.R
 import com.rohan.streaky.ui.screens.home.HomeViewModel
 import com.rohan.streaky.ui.theme.GreenSuccess
 import com.rohan.streaky.ui.theme.OrangePrimary
+import com.rohan.streaky.ui.utils.CategoryIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(vm: HomeViewModel = hiltViewModel()) {
-    val state by vm.state.collectAsStateWithLifecycle()
-    val habits = state.habits
-
+    val state = vm.state.collectAsStateWithLifecycle().value
+    val habits        = state.habits
     val activeStreaks  = habits.count { it.currentStreak > 0 }
     val inactiveCount  = habits.count { it.currentStreak == 0 }
     val bestStreak     = habits.maxOfOrNull { it.bestStreak } ?: 0
@@ -39,52 +39,52 @@ fun DashboardScreen(vm: HomeViewModel = hiltViewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard", fontWeight = FontWeight.Bold) },
+                title  = { Text("Dashboard", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            modifier        = Modifier.fillMaxSize().padding(padding),
+            contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BigStatCard(R.drawable.flame_victory,  "Best Streak", "$bestStreak days",    OrangePrimary,                                 Modifier.weight(1f))
-                    BigStatCard(R.drawable.flame_joy,      "Total Done",  totalDone.toString(),  GreenSuccess,                                  Modifier.weight(1f))
+                    BigStatCard(R.drawable.flame_victory,  "Best Streak", "$bestStreak days",   OrangePrimary,                              Modifier.weight(1f))
+                    BigStatCard(R.drawable.flame_joy,      "Total Done",  totalDone.toString(), GreenSuccess,                               Modifier.weight(1f))
                 }
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BigStatCard(R.drawable.flame_flex,     "Active",   "$activeStreaks habits",  OrangePrimary,                                 Modifier.weight(1f))
-                    BigStatCard(R.drawable.flame_sleeping, "Inactive", "$inactiveCount habits",  MaterialTheme.colorScheme.onSurfaceVariant,    Modifier.weight(1f))
+                    BigStatCard(R.drawable.flame_flex,     "Active",   "$activeStreaks habits", OrangePrimary,                              Modifier.weight(1f))
+                    BigStatCard(R.drawable.flame_sleeping, "Inactive", "$inactiveCount habits", MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
                 }
             }
 
             if (habits.isNotEmpty()) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = OrangePrimary.copy(alpha = 0.08f)),
-                        border = BorderStroke(1.5.dp, OrangePrimary.copy(alpha = 0.3f)),
+                        modifier  = Modifier.fillMaxWidth(),
+                        shape     = RoundedCornerShape(16.dp),
+                        colors    = CardDefaults.cardColors(containerColor = OrangePrimary.copy(alpha = 0.08f)),
+                        border    = BorderStroke(1.5.dp, OrangePrimary.copy(alpha = 0.3f)),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                            modifier              = Modifier.padding(16.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Image(
-                                painter = painterResource(R.drawable.flame_graduate),
+                                painter            = painterResource(R.drawable.flame_graduate),
                                 contentDescription = "Champion",
-                                modifier = Modifier.size(56.dp)
+                                modifier           = Modifier.size(56.dp)
                             )
                             Column {
                                 Text("Champion Habit", style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
-                                Text(longestName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                Text(longestName,      style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                 Text("$bestStreak day best streak", style = MaterialTheme.typography.bodySmall.copy(color = OrangePrimary))
                             }
                         }
@@ -98,7 +98,7 @@ fun DashboardScreen(vm: HomeViewModel = hiltViewModel()) {
                         "All Habits",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -109,11 +109,7 @@ fun DashboardScreen(vm: HomeViewModel = hiltViewModel()) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Image(
-                                painter = painterResource(R.drawable.flame_mascot_standing),
-                                contentDescription = "No data yet",
-                                modifier = Modifier.size(100.dp)
-                            )
+                            Image(painterResource(R.drawable.flame_mascot_standing), "No data yet", Modifier.size(100.dp))
                             Text("No data yet", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                             Text("Add habits to see your stats here", style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                         }
@@ -133,17 +129,13 @@ private fun BigStatCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        modifier  = modifier,
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Image(
-                painter = painterResource(iconRes),
-                contentDescription = label,
-                modifier = Modifier.size(52.dp)
-            )
+            Image(painterResource(iconRes), label, Modifier.size(52.dp))
             Text(value, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, color = color))
             Text(label,  style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
         }
@@ -153,33 +145,46 @@ private fun BigStatCard(
 @Composable
 private fun HabitDashCard(habit: com.rohan.streaky.data.db.entity.HabitEntity) {
     val progress = (habit.currentStreak.toFloat() / habit.goalDays.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val iconRes  = CategoryIcons.drawableRes(habit.iconEmoji)
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(14.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border    = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(40.dp).clip(CircleShape)
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
                     .background(
                         try { Color(android.graphics.Color.parseColor(habit.colorHex)) }
                         catch (e: Exception) { OrangePrimary }
                             .copy(alpha = 0.15f)
                     ),
                 contentAlignment = Alignment.Center
-            ) { Text(habit.iconEmoji, fontSize = 18.sp) }
+            ) {
+                Image(
+                    painter            = painterResource(iconRes),
+                    contentDescription = habit.category,
+                    modifier           = Modifier.size(24.dp)
+                )
+            }
 
             Spacer(Modifier.width(12.dp))
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(habit.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+                Text(
+                    habit.name,
+                    style    = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1
+                )
                 LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
-                    color = OrangePrimary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    progress    = { progress },
+                    modifier    = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
+                    color       = OrangePrimary,
+                    trackColor  = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Text(
                     "${habit.currentStreak}/${habit.goalDays}d · Best: ${habit.bestStreak}d",
@@ -195,11 +200,7 @@ private fun HabitDashCard(habit: com.rohan.streaky.data.db.entity.HabitEntity) {
                         "${habit.currentStreak}",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black, color = OrangePrimary)
                     )
-                    Image(
-                        painter = painterResource(R.drawable.flame_running),
-                        contentDescription = "streak",
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Image(painterResource(R.drawable.flame_running), "streak", Modifier.size(20.dp))
                 }
             } else {
                 Text("—", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurfaceVariant))
