@@ -20,16 +20,15 @@ class StreakWidgetReceiver : GlanceAppWidgetReceiver() {
         appWidgetManager: android.appwidget.AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // Do NOT call super.onUpdate here — we drive the full update ourselves
-        // so state is always populated before Glance renders.
+        // Never call super — we populate state before Glance renders to avoid "Can't load" flash.
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                loadAndSetState(context)
+                refreshAll(context, appWidgetIds)
             } catch (_: Exception) {
-                setDefaultState(context)
+                fallbackAll(context)
             } finally {
-                triggerGlanceUpdate(context)
+                triggerRender(context)
                 pending.finish()
             }
         }
@@ -40,53 +39,93 @@ class StreakWidgetReceiver : GlanceAppWidgetReceiver() {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                loadAndSetState(context)
+                // onEnabled: refresh all registered glance IDs
+                val allIds = GlanceAppWidgetManager(context)
+                    .getGlanceIds(StreakWidget::class.java)
+                    .mapNotNull { glanceId ->
+                        // Convert back to appWidgetId so we can look up the configured habit
+                        glanceId to glanceId
+                    }
+                // Use the full-refresh path which iterates SharedPrefs per widget
+                refreshAll(context, intArrayOf())
             } catch (_: Exception) {
-                setDefaultState(context)
+                fallbackAll(context)
             } finally {
-                triggerGlanceUpdate(context)
+                triggerRender(context)
                 pending.finish()
             }
         }
     }
 
-    private suspend fun loadAndSetState(context: Context) {
-        val appContext = context.applicationContext
-        val entryPoint = EntryPointAccessors.fromApplication(appContext, WidgetEntryPoint::class.java)
-        val habits     = entryPoint.habitDao().getAllHabits().first()
-        val habit      = habits.firstOrNull()
-        val todayEpoch = LocalDate.now().toEpochDay()
-        val isDone     = habit?.let {
-            entryPoint.completionDao().getCompletionForDay(it.id, todayEpoch) != null
-        } ?: false
+    // ──────────────────────────────────────────────────────────────────────────
+    // Core refresh: for each widget ID, look up its configured habit and write state
+    // ──────────────────────────────────────────────────────────────────────────
 
-        val manager = GlanceAppWidgetManager(appContext)
-        manager.getGlanceIds(StreakWidget::class.java).forEach { id ->
-            updateAppWidgetState(appContext, id) { prefs ->
-                prefs[StreakWidget.PREF_HABIT_NAME] = habit?.name ?: "Add a habit"
-                prefs[StreakWidget.PREF_STREAK]     = habit?.currentStreak ?: 0
-                prefs[StreakWidget.PREF_DONE]       = isDone
+    private suspend fun refreshAll(context: Context, appWidgetIds: IntArray) {
+        val appCtx      = context.applicationContext
+        val sp          = appCtx.getSharedPreferences(StreakWidget.SP_NAME, Context.MODE_PRIVATE)
+        val entryPoint  = EntryPointAccessors.fromApplication(appCtx, WidgetEntryPoint::class.java)
+        val glanceMgr   = GlanceAppWidgetManager(appCtx)
+        val todayEpoch  = LocalDate.now().toEpochDay()
+
+        // All currently registered glance IDs
+        val glanceIds = glanceMgr.getGlanceIds(StreakWidget::class.java)
+
+        for (glanceId in glanceIds) {
+            try {
+                // Derive the android appWidgetId so we can look up SharedPrefs
+                // GlanceId internal string is "AppWidgetId-<int>"
+                val rawId = glanceId.toString()
+                val awId  = rawId.substringAfterLast("-").toIntOrNull()
+                val habitId = if (awId != null) sp.getLong("habit_id_$awId", -1L) else -1L
+
+                if (habitId >= 0L) {
+                    val habit  = entryPoint.habitDao().getHabitById(habitId).first()
+                    val isDone = habit?.let {
+                        entryPoint.completionDao().getCompletionForDay(it.id, todayEpoch) != null
+                    } ?: false
+
+                    updateAppWidgetState(appCtx, glanceId) { prefs ->
+                        prefs[StreakWidget.PREF_HABIT_NAME] = habit?.name    ?: "No habit"
+                        prefs[StreakWidget.PREF_STREAK]     = habit?.currentStreak ?: 0
+                        prefs[StreakWidget.PREF_DONE]       = isDone
+                        prefs[StreakWidget.PREF_COLOR_HEX]  = habit?.colorHex ?: "#FF6B1A"
+                    }
+                } else {
+                    // Widget not configured yet
+                    updateAppWidgetState(appCtx, glanceId) { prefs ->
+                        prefs[StreakWidget.PREF_HABIT_NAME] = "Tap + hold to pick habit"
+                        prefs[StreakWidget.PREF_STREAK]     = 0
+                        prefs[StreakWidget.PREF_DONE]       = false
+                        prefs[StreakWidget.PREF_COLOR_HEX]  = "#FF6B1A"
+                    }
+                }
+            } catch (_: Exception) {
+                // Skip this widget on error — don't break others
             }
         }
     }
 
-    private suspend fun setDefaultState(context: Context) {
-        val appContext = context.applicationContext
-        val manager   = GlanceAppWidgetManager(appContext)
+    private suspend fun fallbackAll(context: Context) {
+        val appCtx  = context.applicationContext
+        val manager = GlanceAppWidgetManager(appCtx)
         manager.getGlanceIds(StreakWidget::class.java).forEach { id ->
-            updateAppWidgetState(appContext, id) { prefs ->
-                prefs[StreakWidget.PREF_HABIT_NAME] = "Streaky"
-                prefs[StreakWidget.PREF_STREAK]     = 0
-                prefs[StreakWidget.PREF_DONE]       = false
-            }
+            try {
+                updateAppWidgetState(appCtx, id) { prefs ->
+                    prefs[StreakWidget.PREF_HABIT_NAME] = "Streaky"
+                    prefs[StreakWidget.PREF_STREAK]     = 0
+                    prefs[StreakWidget.PREF_DONE]       = false
+                    prefs[StreakWidget.PREF_COLOR_HEX]  = "#FF6B1A"
+                }
+            } catch (_: Exception) { }
         }
     }
 
-    private suspend fun triggerGlanceUpdate(context: Context) {
-        val appContext = context.applicationContext
-        val manager   = GlanceAppWidgetManager(appContext)
+    private suspend fun triggerRender(context: Context) {
+        val appCtx  = context.applicationContext
+        val manager = GlanceAppWidgetManager(appCtx)
         manager.getGlanceIds(StreakWidget::class.java).forEach { id ->
-            glanceAppWidget.update(appContext, id)
+            try { glanceAppWidget.update(appCtx, id) } catch (_: Exception) { }
         }
     }
 }

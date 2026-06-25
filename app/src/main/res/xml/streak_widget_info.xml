@@ -9,4 +9,5 @@
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:widgetFeatures="reconfigurable"
+    android:configure="com.rohan.streaky.widget.StreakWidgetConfigActivity"
     android:description="@string/widget_label"/>

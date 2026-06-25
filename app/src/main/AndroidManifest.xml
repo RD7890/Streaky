@@ -27,6 +27,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Widget configuration activity: shown when user adds a Streaky widget -->
+        <activity
+            android:name=".widget.StreakWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Streaky">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".notification.BootReceiver"
             android:exported="true">
