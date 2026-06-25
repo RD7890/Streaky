@@ -21,11 +21,10 @@ import com.rohan.streaky.R
 
 // CRITICAL: Never pass android.graphics.Color ARGB ints to ColorProvider(Int) — that
 // constructor expects a @ColorRes resource ID. Always use ColorProvider(Color(argbInt)).
-private val WHITE      = ColorProvider(Color(0xFFFFFFFF.toInt()))
-private val WHITE_70   = ColorProvider(Color(0xB3FFFFFF.toInt()))  // 70% white
-private val WHITE_50   = ColorProvider(Color(0x80FFFFFF.toInt()))  // 50% white
-private val GREEN_DONE = ColorProvider(Color(0xFF4ADE80.toInt()))  // bright green
-private val ORANGE_DEF = Color(0xFFFF6B1A.toInt())
+private val WHITE_TEXT  = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val WHITE_70    = ColorProvider(Color(0xB3FFFFFF.toInt()))
+private val GREEN_DONE  = ColorProvider(Color(0xFF4ADE80.toInt()))
+private val ORANGE_DEF  = Color(0xFFFF6B1A.toInt())
 
 class StreakWidget : GlanceAppWidget() {
 
@@ -48,18 +47,9 @@ class StreakWidget : GlanceAppWidget() {
         } catch (e: Exception) {
             ORANGE_DEF.value.toLong().toInt()
         }
-        val bgColor = ColorProvider(Color(argb))
+        val bgColor      = ColorProvider(Color(argb))
+        val accentColor  = ColorProvider(Color(argb))   // streak number uses habit color
 
-        // Darken the ARGB by 20% for a richer base
-        val darkArgb = android.graphics.Color.argb(
-            255,
-            (android.graphics.Color.red(argb) * 0.80).toInt().coerceIn(0, 255),
-            (android.graphics.Color.green(argb) * 0.80).toInt().coerceIn(0, 255),
-            (android.graphics.Color.blue(argb) * 0.80).toInt().coerceIn(0, 255)
-        )
-        val darkBg = ColorProvider(Color(darkArgb))
-
-        // Mascot tier based on streak
         val mascotRes = when {
             isDone       -> R.drawable.flame_joy
             streak >= 21 -> R.drawable.flame_victory
@@ -68,109 +58,93 @@ class StreakWidget : GlanceAppWidget() {
             else         -> R.drawable.flame_sleeping
         }
 
+        val statusText = when {
+            isDone       -> "Done Today!"
+            streak > 0   -> "You're On A Streak!"
+            else         -> "Start Your Streak!"
+        }
+
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .appWidgetBackground()
                 .background(bgColor)
-                .padding(12.dp)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalAlignment   = Alignment.CenterVertically
+            verticalAlignment   = Alignment.Top
         ) {
-            // ── Habit name pill ──────────────────────────────────────
+            // ── TOP: Habit name on brand-color background ───────────
             Box(
-                modifier         = GlanceModifier
-                    .background(ImageProvider(R.drawable.widget_pill_bg))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text     = name,
-                    style    = TextStyle(
-                        color      = WHITE,
-                        fontSize   = 12.sp,
+                    text  = name,
+                    style = TextStyle(
+                        color      = WHITE_TEXT,
+                        fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     maxLines = 1
                 )
             }
 
-            Spacer(GlanceModifier.height(10.dp))
-
-            // ── Mascot + streak number side by side ──────────────────
-            Row(
-                verticalAlignment   = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.CenterHorizontally
+            // ── MIDDLE: White band — mascot + streak count ──────────
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .background(ImageProvider(R.drawable.widget_white_band))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    provider           = ImageProvider(mascotRes),
-                    contentDescription = "mascot",
-                    modifier           = GlanceModifier.size(54.dp)
-                )
-                Spacer(GlanceModifier.width(6.dp))
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalAlignment   = Alignment.CenterVertically
+                Row(
+                    verticalAlignment   = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Image(
+                        provider           = ImageProvider(mascotRes),
+                        contentDescription = "mascot",
+                        modifier           = GlanceModifier.size(52.dp)
+                    )
+                    Spacer(GlanceModifier.width(6.dp))
                     Text(
                         text  = streak.toString(),
                         style = TextStyle(
-                            color      = WHITE,
-                            fontSize   = 44.sp,
+                            color      = accentColor,
+                            fontSize   = 52.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
+                    Spacer(GlanceModifier.width(4.dp))
                     Text(
                         text  = "Days",
                         style = TextStyle(
-                            color    = WHITE_70,
-                            fontSize = 11.sp
+                            color      = accentColor,
+                            fontSize   = 15.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }
             }
 
-            Spacer(GlanceModifier.height(10.dp))
-
-            // ── Status badge ─────────────────────────────────────────
-            when {
-                isDone -> {
-                    Box(
-                        modifier         = GlanceModifier
-                            .background(ImageProvider(R.drawable.widget_done_badge))
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text  = "Done Today",
-                            style = TextStyle(
-                                color      = GREEN_DONE,
-                                fontSize   = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                }
-                streak > 0 -> {
-                    Text(
-                        text  = "You're On A Streak!",
-                        style = TextStyle(
-                            color      = WHITE_70,
-                            fontSize   = 10.sp,
-                            fontStyle  = FontStyle.Italic
-                        )
+            // ── BOTTOM: Status text on brand-color background ───────
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text  = statusText,
+                    style = TextStyle(
+                        color      = if (isDone) GREEN_DONE else WHITE_TEXT,
+                        fontSize   = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontStyle  = FontStyle.Italic
                     )
-                }
-                else -> {
-                    Text(
-                        text  = "Start your streak!",
-                        style = TextStyle(
-                            color    = WHITE_50,
-                            fontSize = 10.sp
-                        )
-                    )
-                }
+                )
             }
         }
     }
@@ -180,7 +154,6 @@ class StreakWidget : GlanceAppWidget() {
         val PREF_STREAK     = intPreferencesKey("streak")
         val PREF_DONE       = booleanPreferencesKey("done")
         val PREF_COLOR_HEX  = stringPreferencesKey("color_hex")
-        // Stored in SharedPreferences by config activity for receiver lookup
         const val SP_NAME   = "widget_habit_prefs"
     }
 }
