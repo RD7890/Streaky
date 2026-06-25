@@ -45,10 +45,11 @@ private val TAB_ROUTES = listOf(
     Screen.Settings.route
 )
 
-private fun NavBackStackEntry.isTab() = destination.route in TAB_ROUTES
+private fun NavBackStackEntry.isTab()     = destination.route in TAB_ROUTES
+private fun NavBackStackEntry.tabIndex()  = TAB_ROUTES.indexOf(destination.route)
 
-// Smooth, natural easing spec used for all transitions
-private val smoothSpec = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
+// Premium slide spec — FastOutSlowInEasing gives natural iOS-like deceleration
+private const val SLIDE_MS = 280
 
 @Composable
 fun AppNavigation() {
@@ -143,27 +144,38 @@ fun AppNavigation() {
                         )
                     }
                 },
-            // Tab switches: pure crossfade — zero jank on any device
-            // Screen push/pop: short subtle slide from edge sixth + fade
+            // Directional slide: tabs slide left/right based on position order.
+            // Push screens slide in from right; pop slides back to right.
+            // FastOutSlowInEasing = natural iOS-like deceleration, no stutter.
             enterTransition = {
-                if (initialState.isTab() && targetState.isTab()) {
-                    fadeIn(smoothSpec)
-                } else {
-                    fadeIn(smoothSpec) + slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 6 }
+                val fromIdx = initialState.tabIndex()
+                val toIdx   = targetState.tabIndex()
+                when {
+                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
+                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
+                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
+                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
+                    else ->
+                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
                 }
             },
             exitTransition = {
-                if (initialState.isTab() && targetState.isTab()) {
-                    fadeOut(smoothSpec)
-                } else {
-                    fadeOut(smoothSpec) + slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 6 }
+                val fromIdx = initialState.tabIndex()
+                val toIdx   = targetState.tabIndex()
+                when {
+                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
+                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
+                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
+                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
+                    else ->
+                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
                 }
             },
             popEnterTransition  = {
-                fadeIn(smoothSpec) + slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 6 }
+                slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
             },
             popExitTransition   = {
-                fadeOut(smoothSpec) + slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 6 }
+                slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
             }
         ) {
             composable(Screen.Splash.route) {
