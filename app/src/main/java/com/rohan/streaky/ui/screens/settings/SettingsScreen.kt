@@ -1,5 +1,6 @@
 package com.rohan.streaky.ui.screens.settings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,10 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.rohan.streaky.BuildConfig
+import com.rohan.streaky.R
 import com.rohan.streaky.ui.theme.OrangePrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +42,7 @@ fun SettingsScreen() {
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // App header
+            // App header card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -48,14 +50,36 @@ fun SettingsScreen() {
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("🔥", fontSize = 48.sp)
-                    Text("Streaky", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, color = OrangePrimary))
-                    Text("v${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
-                    Text("Build habits that stick", style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                    Image(
+                        painter = painterResource(id = R.drawable.flame_victory),
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp)
+                    )
+                    Text(
+                        "Streaky",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            color = OrangePrimary
+                        )
+                    )
+                    Text(
+                        "v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    Text(
+                        "Build habits that stick",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
                 }
             }
 
@@ -114,14 +138,19 @@ private fun SettingsSection(title: String, content: @Composable ColumnScope.() -
 
 @Composable
 private fun SettingsToggleRow(
-    icon: ImageVector, title: String, subtitle: String,
-    checked: Boolean, onChecked: (Boolean) -> Unit
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onChecked: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = title, tint = OrangePrimary, modifier = Modifier.size(22.dp))
+        Icon(icon, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold))
@@ -130,7 +159,10 @@ private fun SettingsToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onChecked,
-            colors = SwitchDefaults.colors(checkedThumbColor = OrangePrimary, checkedTrackColor = OrangePrimary.copy(alpha = 0.3f))
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = OrangePrimary,
+                checkedTrackColor = OrangePrimary.copy(alpha = 0.3f)
+            )
         )
     }
 }
@@ -138,10 +170,12 @@ private fun SettingsToggleRow(
 @Composable
 private fun SettingsInfoRow(icon: ImageVector, title: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(14.dp))
         Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.weight(1f))
         Text(value, style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))

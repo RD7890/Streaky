@@ -21,10 +21,11 @@ import com.rohan.streaky.R
 
 // CRITICAL: Never pass android.graphics.Color ARGB ints to ColorProvider(Int) — that
 // constructor expects a @ColorRes resource ID. Always use ColorProvider(Color(argbInt)).
-private val WHITE_TEXT  = ColorProvider(Color(0xFFFFFFFF.toInt()))
-private val WHITE_70    = ColorProvider(Color(0xB3FFFFFF.toInt()))
-private val GREEN_DONE  = ColorProvider(Color(0xFF4ADE80.toInt()))
-private val ORANGE_DEF  = Color(0xFFFF6B1A.toInt())
+private val WHITE_SOLID  = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val WHITE_TEXT   = ColorProvider(Color(0xFFFFFFFF.toInt()))
+private val WHITE_80     = ColorProvider(Color(0xCCFFFFFF.toInt()))
+private val GREEN_DONE   = ColorProvider(Color(0xFF4ADE80.toInt()))
+private val ORANGE_DEF   = 0xFFFF6B1A.toInt()
 
 class StreakWidget : GlanceAppWidget() {
 
@@ -37,18 +38,26 @@ class StreakWidget : GlanceAppWidget() {
     @Composable
     private fun WidgetContent(context: Context) {
         val prefs    = currentState<androidx.datastore.preferences.core.Preferences>()
-        val name     = prefs[PREF_HABIT_NAME] ?: "Tap + hold to pick habit"
+        val name     = prefs[PREF_HABIT_NAME] ?: "Pick a habit"
         val streak   = prefs[PREF_STREAK]     ?: 0
         val isDone   = prefs[PREF_DONE]       ?: false
         val colorHex = prefs[PREF_COLOR_HEX]  ?: "#FF6B1A"
 
         val argb = try {
             android.graphics.Color.parseColor(colorHex)
-        } catch (e: Exception) {
-            ORANGE_DEF.value.toLong().toInt()
-        }
-        val bgColor      = ColorProvider(Color(argb))
-        val accentColor  = ColorProvider(Color(argb))   // streak number uses habit color
+        } catch (e: Exception) { ORANGE_DEF }
+
+        // Slightly darker shade for the top section — creates natural depth
+        val darkArgb = android.graphics.Color.argb(
+            255,
+            (android.graphics.Color.red(argb)   * 0.78).toInt().coerceIn(0, 255),
+            (android.graphics.Color.green(argb) * 0.78).toInt().coerceIn(0, 255),
+            (android.graphics.Color.blue(argb)  * 0.78).toInt().coerceIn(0, 255)
+        )
+
+        val topBg      = ColorProvider(Color(darkArgb))   // darker variant for header
+        val midAccent  = ColorProvider(Color(argb))        // habit color for streak number on white
+        val bottomBg   = ColorProvider(Color(argb))        // full habit color for status area
 
         val mascotRes = when {
             isDone       -> R.drawable.flame_joy
@@ -59,35 +68,36 @@ class StreakWidget : GlanceAppWidget() {
         }
 
         val statusText = when {
-            isDone       -> "Done Today!"
-            streak > 0   -> "You're On A Streak!"
-            else         -> "Start Your Streak!"
+            isDone     -> "Done Today"
+            streak > 0 -> "You're On A Streak!"
+            else       -> "Start Your Streak!"
         }
 
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .appWidgetBackground()
-                .background(bgColor)
+                .background(bottomBg)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalAlignment   = Alignment.Top
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── TOP: Habit name on brand-color background ───────────
+            // ── TOP: Habit name (darker shade) ─────────────────────
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .defaultWeight(1.8f)
+                    .background(topBg)
+                    .padding(horizontal = 14.dp, vertical = 0.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text  = name,
-                    style = TextStyle(
+                    text     = name,
+                    maxLines = 1,
+                    style    = TextStyle(
                         color      = WHITE_TEXT,
-                        fontSize   = 14.sp,
+                        fontSize   = 15.sp,
                         fontWeight = FontWeight.Bold
-                    ),
-                    maxLines = 1
+                    )
                 )
             }
 
@@ -95,8 +105,9 @@ class StreakWidget : GlanceAppWidget() {
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .background(ImageProvider(R.drawable.widget_white_band))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .defaultWeight(3f)
+                    .background(WHITE_SOLID)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -105,15 +116,15 @@ class StreakWidget : GlanceAppWidget() {
                 ) {
                     Image(
                         provider           = ImageProvider(mascotRes),
-                        contentDescription = "mascot",
-                        modifier           = GlanceModifier.size(52.dp)
+                        contentDescription = null,
+                        modifier           = GlanceModifier.size(56.dp)
                     )
-                    Spacer(GlanceModifier.width(6.dp))
+                    Spacer(GlanceModifier.width(8.dp))
                     Text(
                         text  = streak.toString(),
                         style = TextStyle(
-                            color      = accentColor,
-                            fontSize   = 52.sp,
+                            color      = midAccent,
+                            fontSize   = 54.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -121,25 +132,26 @@ class StreakWidget : GlanceAppWidget() {
                     Text(
                         text  = "Days",
                         style = TextStyle(
-                            color      = accentColor,
-                            fontSize   = 15.sp,
+                            color      = midAccent,
+                            fontSize   = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
                 }
             }
 
-            // ── BOTTOM: Status text on brand-color background ───────
+            // ── BOTTOM: Status text ─────────────────────────────────
             Box(
                 modifier = GlanceModifier
-                    .fillMaxSize()
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .fillMaxWidth()
+                    .defaultWeight(1.5f)
+                    .padding(horizontal = 12.dp, vertical = 0.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text  = statusText,
                     style = TextStyle(
-                        color      = if (isDone) GREEN_DONE else WHITE_TEXT,
+                        color      = if (isDone) GREEN_DONE else WHITE_80,
                         fontSize   = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontStyle  = FontStyle.Italic

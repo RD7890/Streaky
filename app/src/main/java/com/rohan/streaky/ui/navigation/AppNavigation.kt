@@ -45,13 +45,17 @@ private val TAB_ROUTES = listOf(
     Screen.Settings.route
 )
 
-private fun NavBackStackEntry.tabIndex() = TAB_ROUTES.indexOf(destination.route)
+private fun NavBackStackEntry.isTab() = destination.route in TAB_ROUTES
+
+// Smooth, natural easing spec used for all transitions
+private val smoothSpec = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
+private val pushSpec   = tween<IntOffset>(durationMillis = 220, easing = FastOutSlowInEasing)
 
 @Composable
 fun AppNavigation() {
-    val navController  = rememberNavController()
-    val navBackStack   by navController.currentBackStackEntryAsState()
-    val currentRoute   = navBackStack?.destination?.route
+    val navController = rememberNavController()
+    val navBackStack  by navController.currentBackStackEntryAsState()
+    val currentRoute  = navBackStack?.destination?.route
 
     val bottomNavItems = listOf(
         NavItem(Screen.Today.route,     "Today",     Icons.Filled.Home,     Icons.Outlined.Home),
@@ -62,15 +66,14 @@ fun AppNavigation() {
 
     val showBottomBar = currentRoute in TAB_ROUTES
 
-    // Swipe gesture state (only active on tab screens)
     var swipeDeltaX by remember { mutableFloatStateOf(0f) }
 
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
                 visible = showBottomBar,
-                enter   = slideInVertically(initialOffsetY = { it }),
-                exit    = slideOutVertically(targetOffsetY = { it })
+                enter   = fadeIn(tween(180)) + slideInVertically(tween(180)) { it },
+                exit    = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it }
             ) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -114,7 +117,6 @@ fun AppNavigation() {
             modifier         = Modifier
                 .padding(padding)
                 .pointerInput(currentRoute) {
-                    // Only intercept horizontal swipe on tab screens
                     if (currentRoute in TAB_ROUTES) {
                         detectHorizontalDragGestures(
                             onDragEnd = {
@@ -137,38 +139,33 @@ fun AppNavigation() {
                                 }
                                 swipeDeltaX = 0f
                             },
-                            onDragCancel       = { swipeDeltaX = 0f },
-                            onHorizontalDrag   = { _, delta -> swipeDeltaX += delta }
+                            onDragCancel     = { swipeDeltaX = 0f },
+                            onHorizontalDrag = { _, delta -> swipeDeltaX += delta }
                         )
                     }
                 },
-            // Directional transitions based on tab position
+            // Tab switches: pure crossfade — zero jank on any device
+            // Screen push/pop: short subtle slide from edge sixth + fade
             enterTransition = {
-                val fromIdx = initialState.tabIndex()
-                val toIdx   = targetState.tabIndex()
-                when {
-                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
-                        slideInHorizontally(tween(260)) { it } + fadeIn(tween(260))
-                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
-                        slideInHorizontally(tween(260)) { -it } + fadeIn(tween(260))
-                    else ->
-                        fadeIn(tween(220)) + slideInHorizontally(tween(220)) { it / 4 }
+                if (initialState.isTab() && targetState.isTab()) {
+                    fadeIn(smoothSpec)
+                } else {
+                    fadeIn(smoothSpec) + slideInHorizontally(pushSpec) { it / 6 }
                 }
             },
             exitTransition = {
-                val fromIdx = initialState.tabIndex()
-                val toIdx   = targetState.tabIndex()
-                when {
-                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
-                        slideOutHorizontally(tween(260)) { -it } + fadeOut(tween(260))
-                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
-                        slideOutHorizontally(tween(260)) { it } + fadeOut(tween(260))
-                    else ->
-                        fadeOut(tween(220)) + slideOutHorizontally(tween(220)) { -it / 4 }
+                if (initialState.isTab() && targetState.isTab()) {
+                    fadeOut(smoothSpec)
+                } else {
+                    fadeOut(smoothSpec) + slideOutHorizontally(pushSpec) { -it / 6 }
                 }
             },
-            popEnterTransition  = { fadeIn(tween(220)) + slideInHorizontally(tween(220)) { -it / 4 } },
-            popExitTransition   = { fadeOut(tween(220)) + slideOutHorizontally(tween(220)) { it / 4 } }
+            popEnterTransition  = {
+                fadeIn(smoothSpec) + slideInHorizontally(pushSpec) { -it / 6 }
+            },
+            popExitTransition   = {
+                fadeOut(smoothSpec) + slideOutHorizontally(pushSpec) { it / 6 }
+            }
         ) {
             composable(Screen.Splash.route) {
                 com.rohan.streaky.ui.screens.splash.SplashScreen(
