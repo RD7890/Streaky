@@ -144,38 +144,42 @@ fun AppNavigation() {
                         )
                     }
                 },
-            // Directional slide: tabs slide left/right based on position order.
-            // Push screens slide in from right; pop slides back to right.
-            // FastOutSlowInEasing = natural iOS-like deceleration, no stutter.
+            // slideIntoContainer/slideOutOfContainer use the combined size of BOTH
+            // screens so the offset is always pixel-perfect flush — no gap, no stutter.
+            // Blending a short fade (150ms) alongside the slide hides the frame boundary
+            // between the two composables, which is what makes transitions look "janky"
+            // on mid-range devices even at 60 fps.
             enterTransition = {
                 val fromIdx = initialState.tabIndex()
                 val toIdx   = targetState.tabIndex()
-                when {
-                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
-                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
-                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
-                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
-                    else ->
-                        slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
-                }
+                val dir = if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx)
+                    AnimatedContentTransitionScope.SlideDirection.End
+                else
+                    AnimatedContentTransitionScope.SlideDirection.Start
+                slideIntoContainer(dir, tween(SLIDE_MS, easing = FastOutSlowInEasing)) +
+                    fadeIn(tween(150, easing = FastOutSlowInEasing))
             },
             exitTransition = {
                 val fromIdx = initialState.tabIndex()
                 val toIdx   = targetState.tabIndex()
-                when {
-                    fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx ->
-                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
-                    fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx ->
-                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
-                    else ->
-                        slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
-                }
+                val dir = if (fromIdx >= 0 && toIdx >= 0 && toIdx < fromIdx)
+                    AnimatedContentTransitionScope.SlideDirection.Start
+                else
+                    AnimatedContentTransitionScope.SlideDirection.End
+                slideOutOfContainer(dir, tween(SLIDE_MS, easing = FastOutSlowInEasing)) +
+                    fadeOut(tween(150, easing = FastOutSlowInEasing))
             },
-            popEnterTransition  = {
-                slideInHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { -it }
+            popEnterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.End,
+                    tween(SLIDE_MS, easing = FastOutSlowInEasing)
+                ) + fadeIn(tween(150, easing = FastOutSlowInEasing))
             },
-            popExitTransition   = {
-                slideOutHorizontally(tween(SLIDE_MS, easing = FastOutSlowInEasing)) { it }
+            popExitTransition = {
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    tween(SLIDE_MS, easing = FastOutSlowInEasing)
+                ) + fadeOut(tween(150, easing = FastOutSlowInEasing))
             }
         ) {
             composable(Screen.Splash.route) {
